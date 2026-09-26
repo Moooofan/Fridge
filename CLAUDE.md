@@ -44,8 +44,7 @@ xcrun simctl launch booted com.moooofan.fridge
 ```
 
 ## API Configuration
-- OpenAI API Key 存放在 `Fridge/Resources/Secrets.plist`
-- Key name: `OPENAI_API_KEY`
+- App 不再持有 OpenAI 金鑰（見 Backend 一節）。`Fridge/Resources/Secrets.plist` 只放公開值：`SUPABASE_URL`、`SUPABASE_ANON_KEY`、`GOOGLE_CLIENT_ID`、`LINE_CHANNEL_ID`。
 
 ## Important Files
 - `project.yml` - xcodegen 設定檔
@@ -89,7 +88,15 @@ xcrun simctl launch booted com.moooofan.fridge
 ## Backend (Supabase `fridge`, added 2026-09-11)
 - 專案 ref `sqninmyidhgfjyvulayr`（Tokyo）。App 用 `SUPABASE_URL` + `SUPABASE_ANON_KEY`（新版 `sb_publishable_…`）。金鑰與 DB 密碼在 `~/.config/fridge/.env`（chmod 600，不進 repo）。
 - **OpenAI 金鑰不再放在 App**：`Fridge/Services/EdgeAIClient.swift` 打 Edge Functions `openai-chat` / `openai-vision`（`supabase/functions/`，共用 `_shared/aiProxy.ts`），模型固定 `gpt-5.6-luna`，每呼叫者 10 分鐘 20 次（`rate_limits` 表，migration 在 `supabase/migrations/`）。部署：`supabase functions deploy <fn> --use-api --project-ref sqninmyidhgfjyvulayr`；金鑰：`supabase secrets set --project-ref … --env-file <file>`。
-- Auth 設定用 `supabase/config.toml` + `supabase config push --project-ref …`：Apple（bundle id）、Google（web client id + iOS client id，secret 由環境變數 `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` 注入，值在 ~/.config/fridge/.env）。LINE 為自訂 OIDC 提供者 `custom:line`（已用 `POST /auth/v1/admin/custom-providers` 註冊，issuer access.line.me，scopes openid+profile）。LINE channel 2011558204 目前為 Developing，公開前要在 LINE Developers 按 Publish。
-- Google Cloud 專案 `fridge-508306`（ray860408@gmail.com）；OAuth 同意畫面為「測試中」，只有測試使用者名單能用 Google 登入，正式上線前要在 Google Auth Platform > 目標對象按「發布應用程式」。
+- Auth 設定用 `supabase/config.toml` + `supabase config push --project-ref …`：Apple（bundle id）、Google（web client id + iOS client id，secret 由環境變數 `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` 注入，值在 ~/.config/fridge/.env）。LINE 為自訂 OIDC 提供者 `custom:line`（已用 `POST /auth/v1/admin/custom-providers` 註冊，issuer access.line.me，scopes openid+profile）。LINE channel 2011558204 已 Published。
+- Google Cloud 專案 `fridge-508306`（ray860408@gmail.com）；OAuth 同意畫面已發布為正式。
 - 若 AI 回傳的 `difficulty` 是中文，`Recipe.Difficulty` 的寬鬆解碼會接受（2026-09-11 實測模型偶爾這樣回）。
 - 官網／隱私權／服務條款靜態頁在 `Website/`，部署於 Vercel 專案 `fridge-site`（https://fridge-site.vercel.app ，`cd Website && vercel deploy --prod --yes`）。Google OAuth 已於 2026-09-11 發布為正式（外部），只用 openid/profile/email 不需驗證；勿上傳 Logo，否則會觸發 Google 驗證流程。
+
+## App Store submission (added 2026-09-26)
+- iPhone only（TARGETED_DEVICE_FAMILY "1"，直向）。App 圖示與 App 內品牌圖 `BrandMark` 同一張（Distribution/Logo/concept-1.png）。
+- 審核必備已實作：設定 > 刪除帳號（Edge Function `delete-account`，Apple 撤銷需 secrets `APPLE_TEAM_ID/APPLE_KEY_ID/APPLE_CLIENT_ID/APPLE_PRIVATE_KEY`）；第三方 AI 同意畫面（`AIConsentStore`，未同意時 OpenAIService/Vision 都不送資料，改用離線食譜）；AI 改編食譜標「靈感來源（AI 改編）」，內建食譜標「參考來源」，設定頁有不隸屬聲明。
+- 數據：不用 Firebase。事件與 MetricKit 當機報告經 Edge Function `track` 寫入 Supabase 表 `analytics_events` / `crash_reports`（RLS 無公開讀取），常用查詢在 `supabase/sql/analytics_dashboard.sql`；設定 > 分析與診斷可關閉。
+- AI 代理：系統提示由伺服器決定、參數鎖死、每人 20 次/10 分、60 次/日、全站 2000 次/日，DB 出錯即拒絕；`rate_limits` 兩天前的紀錄會被隨機清除。
+- `supabase db push` 會被 auto-mode 分類器擋下，要使用者自己在終端機跑（加 `--yes` 免互動）；`supabase functions deploy` 可由 Claude 執行。
+- 上架素材：`Distribution/AppStore/`（listing-zh-TW.md、listing-en.md、privacy-labels.md、screenshots/ 1320×2868 共 5 張，`render.py` 重繪）。

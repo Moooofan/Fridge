@@ -233,6 +233,15 @@ async function enforceRateLimits(admin: SupabaseContext["supabaseAdmin"], caller
     console.error("rate_limits insert failed", insertError);
     throw new HttpError(503, "服務忙碌，請稍後再試");
   }
+
+  // Retention: the privacy policy says these rows are short-lived. On ~2% of
+  // requests, purge anything older than 2 days (limits only look back 1 day).
+  // Best-effort: a failure here must never block the user's request.
+  if (Math.random() < 0.02) {
+    const cutoff = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const { error: purgeError } = await admin.from("rate_limits").delete().lt("created_at", cutoff);
+    if (purgeError) console.error("rate_limits purge failed", purgeError);
+  }
 }
 
 export function createAIProxyHandler(kind: AIProxyKind) {
