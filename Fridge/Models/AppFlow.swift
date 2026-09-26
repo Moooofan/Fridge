@@ -52,6 +52,7 @@ final class AppFlowState: ObservableObject {
     /// otherwise to `.login`.
     func completeOnboarding() {
         defaults.set(true, forKey: Self.hasCompletedOnboardingKey)
+        Analytics.log(.onboardingComplete)
         stage = sessionStore.hasStoredUser ? .main : .login
     }
 

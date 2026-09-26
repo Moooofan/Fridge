@@ -45,6 +45,7 @@ final class FavoritesViewModel: ObservableObject {
         guard !isFavorite(recipe) else { return }
         favorites.append(recipe)
         store.saveFavorites(favorites)
+        Analytics.log(.recipeFavorited)
     }
 
     /// 移除收藏

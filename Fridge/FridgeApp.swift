@@ -8,6 +8,7 @@ struct FridgeApp: App {
     @StateObject private var historyVM = HistoryViewModel()
     @StateObject private var condimentVM = CondimentViewModel()
     @StateObject private var appFlow: AppFlowState
+    @Environment(\.scenePhase) private var scenePhase
 
     /// DEBUG demo launches (`-demo <scenario>`) force a specific stage and should
     /// skip the real session restore so e.g. `-demo login` reliably shows LoginView
@@ -15,6 +16,10 @@ struct FridgeApp: App {
     private let shouldRestoreSessionAtLaunch: Bool
 
     init() {
+        // Analytics/crash reporting facade（見 Fridge/Services/Analytics.swift）：沒設定
+        // Supabase 時整支是 no-op，設定好後會補送上次留在佇列裡的事件。
+        Analytics.configure()
+
         // 提早在背景執行緒觸發 CuratedRecipes.json 載入，避免第一次比對食譜時卡在主執行緒
         RecipeDatabase.shared.preload()
 
@@ -51,6 +56,12 @@ struct FridgeApp: App {
                     // 不認得的 URL 會回傳 false，不會互相干擾。
                     if GIDSignIn.sharedInstance.handle(url) { return }
                     _ = LoginManager.shared.application(.shared, open: url)
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    // App 進背景時把還沒送出的分析事件補送一次；沒設定 Supabase 或使用者
+                    // 關閉分析時 `Analytics.flush()` 直接是 no-op。
+                    guard newPhase == .background else { return }
+                    Task { await Analytics.flush() }
                 }
         }
     }

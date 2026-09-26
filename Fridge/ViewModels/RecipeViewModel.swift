@@ -102,6 +102,7 @@ final class RecipeViewModel: ObservableObject {
         do {
             let response = try await aiService.generateRecipes(params: params)
             loadingState = .success(response)
+            logRecipesGenerated(response, source: aiService is LocalRecipeService ? .local : .ai)
         } catch {
             let aiMessage = error.localizedDescription
             // AI 失敗（金鑰無效、沒網路、額度不足…）時改用內建專業食譜配菜，不讓使用者卡在錯誤頁
@@ -110,10 +111,18 @@ final class RecipeViewModel: ObservableObject {
                !fallback.recipes.isEmpty {
                 fallbackNotice = "AI 暫時無法使用（\(aiMessage)），改用內建的專業廚師食譜為你配菜。"
                 loadingState = .success(fallback)
+                logRecipesGenerated(fallback, source: .localFallback)
                 return
             }
             loadingState = .error(aiMessage)
         }
+    }
+
+    /// 記錄一次食譜生成完成（不含食譜文字／食材名稱，只有菜／湯數量與來源）。
+    private func logRecipesGenerated(_ response: AIRecipeResponse, source: AnalyticsEvent.RecipeSource) {
+        let dishes = response.recipes.filter { $0.type == .dish }.count
+        let soups = response.recipes.filter { $0.type == .soup }.count
+        Analytics.log(.recipesGenerated(dishes: dishes, soups: soups, source: source))
     }
 
     /// 重試生成
