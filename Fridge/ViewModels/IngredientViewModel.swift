@@ -103,14 +103,17 @@ final class IngredientViewModel: ObservableObject {
             for name in names {
                 addIngredient(name)
             }
+            Analytics.log(.photoRecognition(success: true, count: names.count))
         } catch let error as AIServiceError {
             if case .apiError(let message) = error {
                 recognitionError = message
             } else {
                 recognitionError = error.localizedDescription
             }
+            Analytics.log(.photoRecognition(success: false, count: 0))
         } catch {
             recognitionError = error.localizedDescription
+            Analytics.log(.photoRecognition(success: false, count: 0))
         }
     }
 

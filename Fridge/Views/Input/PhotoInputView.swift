@@ -279,6 +279,7 @@ struct PhotoInputView: View {
         if !ingredientVM.photoNote.isEmpty {
             ingredientVM.parsePhotoNote()
         }
+        Analytics.log(.ingredientsAdded(count: ingredientVM.ingredientCount, source: .photo))
         showReviewView = true
     }
 }

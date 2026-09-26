@@ -132,6 +132,7 @@ struct TextInputView: View {
         if !ingredientVM.textInput.isEmpty {
             ingredientVM.parseTextInput()
         }
+        Analytics.log(.ingredientsAdded(count: ingredientVM.ingredientCount, source: .text))
         showReviewView = true
     }
 }

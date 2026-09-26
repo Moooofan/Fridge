@@ -35,7 +35,7 @@ final class AuthViewModel: ObservableObject {
         case .guest:
             continueAsGuest()
         case .google:
-            await run {
+            await run(method: "google") {
                 guard let presenting = Self.topViewController() else {
                     throw AuthError.unknown(NSError(domain: "AuthViewModel", code: -1, userInfo: [
                         NSLocalizedDescriptionKey: "無法顯示登入畫面，請重試",
@@ -44,7 +44,7 @@ final class AuthViewModel: ObservableObject {
                 return try await self.authService.signInWithGoogle(presenting: presenting)
             }
         case .line:
-            await run { try await self.authService.signInWithLine() }
+            await run(method: "line") { try await self.authService.signInWithLine() }
         case .apple:
             assertionFailure("Apple 登入請走 completeAppleSignIn(authorization:rawNonce:)")
         }
@@ -60,17 +60,21 @@ final class AuthViewModel: ObservableObject {
             }
             errorMessage = error.localizedDescription
         case .success(let authorization):
-            await run { try await self.authService.signInWithApple(authorization: authorization, rawNonce: rawNonce) }
+            await run(method: "apple") { try await self.authService.signInWithApple(authorization: authorization, rawNonce: rawNonce) }
         }
     }
 
-    /// 共用的「跑一段登入流程、處理忙碌狀態與錯誤」邏輯。
-    private func run(_ action: @escaping () async throws -> UserProfile) async {
+    /// 共用的「跑一段登入流程、處理忙碌狀態與錯誤」邏輯。`method` 非 nil 時，成功後記一筆
+    /// `.login(method:)` 分析事件。
+    private func run(method: String? = nil, _ action: @escaping () async throws -> UserProfile) async {
         errorMessage = nil
         isBusy = true
         defer { isBusy = false }
         do {
             user = try await action()
+            if let method {
+                Analytics.log(.login(method: method))
+            }
         } catch let error as AuthError {
             if case .cancelled = error {
                 return
@@ -87,6 +91,7 @@ final class AuthViewModel: ObservableObject {
         let profile = UserProfile.guest()
         UserSessionStore.shared.currentUser = profile
         user = profile
+        Analytics.log(.loginSkipGuest)
     }
 
     func signOut() async {
@@ -105,6 +110,8 @@ final class AuthViewModel: ObservableObject {
         defer { isBusy = false }
         do {
             try await authService.deleteAccount()
+            Analytics.log(.accountDeleted)
+            await Analytics.flush()
             user = nil
             return true
         } catch let error as AuthError {

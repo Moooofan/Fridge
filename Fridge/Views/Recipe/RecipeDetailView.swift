@@ -49,6 +49,9 @@ struct RecipeDetailView: View {
         }
         .background(Color(.systemBackground))
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            Analytics.log(.recipeViewed(fromCurated: recipe.source != nil && !recipe.source!.isEmpty))
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

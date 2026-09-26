@@ -17,6 +17,7 @@ struct SettingsView: View {
     @State private var showingDeleteConfirm = false
     @State private var showingAIConsentSheet = false
     @State private var aiConsentGranted = AIConsentStore.isGranted
+    @State private var analyticsEnabled = Analytics.isEnabled
 
     var body: some View {
         NavigationStack {
@@ -40,6 +41,19 @@ struct SettingsView: View {
                     Text("隱私")
                 } footer: {
                     Text("同意後，食材、用餐條件與你選擇辨識的照片會透過我們的伺服器傳送給 OpenAI。不同意時改用內建食譜離線配菜。")
+                }
+
+                // 分析與診斷
+                Section {
+                    Toggle("分析與診斷", isOn: Binding(
+                        get: { analyticsEnabled },
+                        set: { newValue in
+                            analyticsEnabled = newValue
+                            Analytics.isEnabled = newValue
+                        }
+                    ))
+                } footer: {
+                    Text("匿名的使用統計與當機報告，用來改善 App，不含你的食材或食譜內容。")
                 }
 
                 // 調味料設定
