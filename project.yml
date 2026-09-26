@@ -9,7 +9,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    TARGETED_DEVICE_FAMILY: "1,2"
+    TARGETED_DEVICE_FAMILY: "1"
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
     DEVELOPMENT_TEAM: "P9Z76UZ829"
@@ -54,6 +54,9 @@ targets:
       base:
         INFOPLIST_FILE: Fridge/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.moooofan.fridge
+        # iPhone only (xcodegen sets "1,2" at target level for iOS apps by default,
+        # which would override the project-level value above).
+        TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         CODE_SIGN_ENTITLEMENTS: Fridge/Fridge.entitlements
@@ -65,15 +68,8 @@ targets:
           UIImageName: ""
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
-        UISupportedInterfaceOrientations~ipad:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationPortraitUpsideDown
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
-        NSCameraUsageDescription: "需要使用相機拍攝食材照片"
-        NSPhotoLibraryUsageDescription: "需要存取相簿選擇食材照片"
+        NSCameraUsageDescription: "拍攝冰箱或食材照片；在你同意後，照片會傳送給 AI 辨識食材"
+        NSPhotoLibraryUsageDescription: "選擇食材照片；在你同意後，照片會傳送給 AI 辨識食材"
         ITSAppUsesNonExemptEncryption: false
         CFBundleDisplayName: Fridge
         CFBundleName: Fridge

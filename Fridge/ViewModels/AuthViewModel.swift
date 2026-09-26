@@ -109,9 +109,11 @@ final class AuthViewModel: ObservableObject {
         isBusy = true
         defer { isBusy = false }
         do {
-            try await authService.deleteAccount()
+            // 先記錄並送出事件：伺服器刪除帳號後，已登入身分的 token 會失效，
+            // 之後才送就會被拒或無法對應到這個帳號。
             Analytics.log(.accountDeleted)
             await Analytics.flush()
+            try await authService.deleteAccount()
             user = nil
             return true
         } catch let error as AuthError {

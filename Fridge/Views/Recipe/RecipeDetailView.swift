@@ -18,8 +18,8 @@ struct RecipeDetailView: View {
                     // Meta Info (using shared component)
                     RecipeMetaInfoSection(recipe: recipe)
 
-                    if let source = recipe.source, !source.isEmpty {
-                        Text("參考食譜：\(source)")
+                    if let attribution = recipe.attributionText {
+                        Text(attribution)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)

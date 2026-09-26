@@ -9,10 +9,13 @@ private struct OnboardingPage: Identifiable {
     let lines: [String]
 }
 
+/// 特殊 icon 值：顯示 App 品牌標誌（`BrandMarkView`）而不是 SF Symbol
+private let brandMarkIcon = "brandmark"
+
 private let onboardingPages: [OnboardingPage] = [
     OnboardingPage(
         id: 0,
-        icon: "refrigerator.fill",
+        icon: brandMarkIcon,
         title: "把冰箱裡有的，變成今晚的菜",
         lines: [
             "輸入你手邊的食材，Fridge 幫你配出一桌家常菜，",
@@ -142,15 +145,19 @@ private struct OnboardingPageView: View {
                 VStack(spacing: 24) {
                     Spacer(minLength: 24)
 
-                    // Hero icon
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 28)
-                            .fill(Color.black)
-                            .frame(width: 120, height: 120)
+                    // Hero icon：第一頁用品牌標誌，其餘頁用 SF Symbol 說明功能
+                    if page.icon == brandMarkIcon {
+                        BrandMarkView(size: 120)
+                    } else {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 28)
+                                .fill(Color.black)
+                                .frame(width: 120, height: 120)
 
-                        Image(systemName: page.icon)
-                            .font(.system(size: 44, weight: .light))
-                            .foregroundColor(.white)
+                            Image(systemName: page.icon)
+                                .font(.system(size: 44, weight: .light))
+                                .foregroundColor(.white)
+                        }
                     }
 
                     VStack(spacing: 12) {

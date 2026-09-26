@@ -66,8 +66,8 @@ struct RecipeCard: View {
                 .foregroundColor(.secondary)
 
                 // Source caption (if from a curated/reference recipe)
-                if let source = recipe.source, !source.isEmpty {
-                    Text("參考：\(source)")
+                if let attribution = recipe.attributionText {
+                    Text(attribution)
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }

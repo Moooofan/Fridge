@@ -53,7 +53,7 @@ struct SettingsView: View {
                         }
                     ))
                 } footer: {
-                    Text("匿名的使用統計與當機報告，用來改善 App，不含你的食材或食譜內容。")
+                    Text("使用統計與當機報告，用來改善 App；不含你的食材、照片或食譜內容。登入時會連結到你的帳號。")
                 }
 
                 // 調味料設定
@@ -177,18 +177,23 @@ struct SettingsView: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text("1.0.0")
+                        Text(Self.appVersion)
                             .foregroundColor(.secondary)
                     }
 
-                    HStack {
-                        Text("AI 模式")
-                        Spacer()
-                        Text(SecretsManager.shared.hasValidAPIKey ? "OpenAI" : (EdgeAIClient.isConfigured ? "OpenAI (Edge)" : "Mock"))
-                            .foregroundColor(.secondary)
+                    Link(destination: AIConsentView.privacyURL) {
+                        HStack {
+                            Text("隱私權政策")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .foregroundColor(.secondary)
+                        }
                     }
                 } header: {
                     Text("關於")
+                } footer: {
+                    Text("本 App 所列之廚師、節目與網站僅為食譜參考來源，與本 App 無合作或背書關係。")
                 }
 
                 // 新手導覽
@@ -249,6 +254,14 @@ struct SettingsView: View {
         }
     }
 
+    /// 例如「1.0.0 (1)」，讀自 Info.plist 的 CFBundleShortVersionString / CFBundleVersion
+    private static var appVersion: String {
+        let info = Bundle.main.infoDictionary
+        let short = info?["CFBundleShortVersionString"] as? String ?? "—"
+        let build = info?["CFBundleVersion"] as? String ?? "—"
+        return "\(short) (\(build))"
+    }
+
     // MARK: - Account Row
 
     @ViewBuilder
@@ -293,7 +306,7 @@ struct SettingsView: View {
                     Image(systemName: "person.crop.circle.badge.plus")
                         .foregroundColor(.black)
                         .frame(width: 28)
-                    Text("登入以同步收藏（即將推出）")
+                    Text("登入帳號")
                         .foregroundColor(.primary)
                 }
             }

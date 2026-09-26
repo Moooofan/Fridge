@@ -22,6 +22,12 @@ final class OpenAIService: AIService {
     """
 
     func generateRecipes(params: AIRequestParams) async throws -> AIRecipeResponse {
+        // 縱深防禦（App Store 5.1.2(i)）：UI 已先取得同意，這裡再檢查一次；
+        // 未同意就完全不傳送資料，改用裝置上的內建食譜。
+        guard AIConsentStore.isGranted else {
+            return try await LocalRecipeService().generateRecipes(params: params)
+        }
+
         // 節流：避免短時間內重複打 API
         if let last = Self.lastRequestDate, Date().timeIntervalSince(last) < Self.minRequestInterval {
             throw AIServiceError.apiError("請稍候再試")
@@ -51,16 +57,21 @@ final class OpenAIService: AIService {
 
         do {
             let recipeResponse = try await fetchAndDecode(apiKey: apiKey, userPrompt: basePrompt)
-            let withSource = applySourceFallback(recipeResponse, references: groundedParams.referenceRecipes)
+            let withSource = markAIAdapted(applySourceFallback(recipeResponse, references: groundedParams.referenceRecipes))
             return filterOutAllergens(withSource, allergies: params.preferences.allergies)
         } catch let error as AIServiceError {
             guard case .decodingError = error else { throw error }
             // 解碼失敗只重試一次，附加提示要求模型重新輸出合法 JSON；重試不重新計入 3 秒節流
             let retryPrompt = basePrompt + "\n\n上一次輸出不是合法 JSON，請重新輸出完整且合法的 JSON。"
             let recipeResponse = try await fetchAndDecode(apiKey: apiKey, userPrompt: retryPrompt)
-            let withSource = applySourceFallback(recipeResponse, references: groundedParams.referenceRecipes)
+            let withSource = markAIAdapted(applySourceFallback(recipeResponse, references: groundedParams.referenceRecipes))
             return filterOutAllergens(withSource, allergies: params.preferences.allergies)
         }
+    }
+
+    /// AI 產生的食譜一律標為「AI 改編」，畫面上以「靈感來源：…（AI 改編）」顯示來源
+    private func markAIAdapted(_ response: AIRecipeResponse) -> AIRecipeResponse {
+        AIRecipeResponse(menu: response.menu, recipes: response.recipes.map { $0.withSource($0.source, isAIAdapted: true) })
     }
 
     /// 發送一次請求並解析成食譜 JSON；解碼失敗會拋出 `.decodingError`（呼叫端負責重試邏輯）

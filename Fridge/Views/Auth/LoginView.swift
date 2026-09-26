@@ -2,9 +2,10 @@ import AuthenticationServices
 import SwiftUI
 
 /// 登入畫面：Apple／Google／LINE 三個登入按鈕，加上「先逛逛」訪客模式。
-/// 視覺風格沿用 `OnboardingView`（黑色圓角方塊 icon、黑色圓角按鈕、zh-TW 文案）。
+/// 視覺風格沿用 `OnboardingView`（品牌標誌 `BrandMarkView`、黑色圓角按鈕、zh-TW 文案）。
 struct LoginView: View {
     @EnvironmentObject var appFlow: AppFlowState
+    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var viewModel: AuthViewModel
 
     /// Sign in with Apple 的 nonce：每次 `SignInWithAppleButton` 的 `onRequest` 觸發時
@@ -38,7 +39,7 @@ struct LoginView: View {
                     .foregroundColor(.primary)
                     .padding(.top, 20)
 
-                Text("登入後可在多台裝置同步收藏，未來也會用來備份你的紀錄")
+                Text("使用 Apple、Google 或 LINE 帳號登入，也可以先逛逛")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -85,14 +86,7 @@ struct LoginView: View {
     }
 
     private var heroIcon: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 28)
-                .fill(Color.black)
-                .frame(width: 96, height: 96)
-            Image(systemName: "refrigerator.fill")
-                .font(.system(size: 36, weight: .light))
-                .foregroundColor(.white)
-        }
+        BrandMarkView(size: 96)
     }
 
     private var buttons: some View {
@@ -107,7 +101,7 @@ struct LoginView: View {
                     await viewModel.completeAppleSignIn(result: result, rawNonce: appleNonce)
                 }
             }
-            .signInWithAppleButtonStyle(.black)
+            .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
             .frame(height: 52)
             .clipShape(RoundedRectangle(cornerRadius: 14))
 

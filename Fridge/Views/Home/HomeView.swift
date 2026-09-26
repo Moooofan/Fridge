@@ -86,18 +86,8 @@ private struct LogoSection: View {
     var body: some View {
         VStack(spacing: 16) {
             // Logo
-            ZStack {
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color.black)
-                    .frame(width: 100, height: 100)
-
-                VStack(spacing: 4) {
-                    Image(systemName: "refrigerator.fill")
-                        .font(.system(size: 36, weight: .light))
-                        .foregroundColor(.white)
-                }
-            }
-            .padding(.top, 60)
+            BrandMarkView(size: 100)
+                .padding(.top, 60)
 
             // App 名稱
             Text("Fridge")

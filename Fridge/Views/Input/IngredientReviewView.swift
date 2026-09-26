@@ -4,7 +4,7 @@ struct IngredientReviewView: View {
     @ObservedObject var ingredientVM: IngredientViewModel
     @StateObject private var recipeVM = RecipeViewModel()
     /// 使用者不同意 AI 資料使用時改用的離線配菜（LocalRecipeService，不會傳送任何資料）。
-    @StateObject private var offlineRecipeVM = RecipeViewModel(aiService: LocalRecipeService())
+    @StateObject private var offlineRecipeVM = RecipeViewModel(aiService: LocalRecipeService(), offlineNotice: RecipeViewModel.consentDeclinedNotice)
     /// 這次產生結果用的是哪一個 ViewModel（結果頁要顯示同一個）。
     @State private var usedOfflineRecipes = false
     @State private var showAIConsent = false

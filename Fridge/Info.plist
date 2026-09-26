@@ -54,9 +54,9 @@
 		<string>lineauth2</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>需要使用相機拍攝食材照片</string>
+	<string>拍攝冰箱或食材照片；在你同意後，照片會傳送給 AI 辨識食材</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>需要存取相簿選擇食材照片</string>
+	<string>選擇食材照片；在你同意後，照片會傳送給 AI 辨識食材</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
@@ -67,15 +67,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 </dict>
 </plist>

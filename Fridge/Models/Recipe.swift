@@ -88,6 +88,15 @@ struct Recipe: Identifiable, Codable, Equatable, Hashable {
     let tips: [String]
     /// 參考食譜來源（例如專業廚師/節目名），沒有則為 nil
     let source: String?
+    /// true：由 AI 參考 `source` 改編產生（顯示「靈感來源：…（AI 改編）」）；
+    /// false：直接取自內建食譜庫（顯示「參考來源：…」）。舊資料沒有此欄位時為 false。
+    let isAIAdapted: Bool
+
+    /// 卡片／詳情頁顯示的來源說明；沒有來源時為 nil
+    var attributionText: String? {
+        guard let source, !source.isEmpty else { return nil }
+        return isAIAdapted ? "靈感來源：\(source)（AI 改編）" : "參考來源：\(source)"
+    }
 
     /// 時間顯示格式
     var timeDisplay: String {
@@ -109,7 +118,7 @@ struct Recipe: Identifiable, Codable, Equatable, Hashable {
 
     // 自定義解碼
     enum CodingKeys: String, CodingKey {
-        case id, type, title, reason, timeMinutes, difficulty, servings, ingredients, steps, tips, source
+        case id, type, title, reason, timeMinutes, difficulty, servings, ingredients, steps, tips, source, isAIAdapted
     }
 
     init(
@@ -123,7 +132,8 @@ struct Recipe: Identifiable, Codable, Equatable, Hashable {
         ingredients: [Ingredient],
         steps: [String],
         tips: [String],
-        source: String? = nil
+        source: String? = nil,
+        isAIAdapted: Bool = false
     ) {
         self.id = id
         self.type = type
@@ -136,10 +146,11 @@ struct Recipe: Identifiable, Codable, Equatable, Hashable {
         self.steps = steps
         self.tips = tips
         self.source = source
+        self.isAIAdapted = isAIAdapted
     }
 
     /// 回傳一份 source 欄位被替換的複本（Recipe 為不可變 struct，供 AI 回應後補上參考來源用）
-    func withSource(_ source: String?) -> Recipe {
+    func withSource(_ source: String?, isAIAdapted: Bool? = nil) -> Recipe {
         Recipe(
             id: id,
             type: type,
@@ -151,7 +162,8 @@ struct Recipe: Identifiable, Codable, Equatable, Hashable {
             ingredients: ingredients,
             steps: steps,
             tips: tips,
-            source: source
+            source: source,
+            isAIAdapted: isAIAdapted ?? self.isAIAdapted
         )
     }
 
@@ -190,6 +202,9 @@ struct Recipe: Identifiable, Codable, Equatable, Hashable {
 
         // source: 可選（舊資料沒有這個欄位時為 nil）
         self.source = try container.decodeIfPresent(String.self, forKey: .source)
+
+        // isAIAdapted: 可選（舊收藏／歷史沒有這個欄位時為 false；AI 回應也不含，由 OpenAIService 設定）
+        self.isAIAdapted = try container.decodeIfPresent(Bool.self, forKey: .isAIAdapted) ?? false
     }
 }
 

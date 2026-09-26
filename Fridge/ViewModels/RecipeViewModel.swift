@@ -28,6 +28,12 @@ final class RecipeViewModel: ObservableObject {
     // MARK: - Private Properties
 
     private let aiService: AIService
+    /// 成功產生後固定顯示的提示（例如使用者不同意 AI 資料使用、改走離線配菜時）；
+    /// AI 失敗改用備援時則顯示備援提示，兩者不會同時出現。
+    private let offlineNotice: String?
+
+    /// 使用者不同意 AI 資料使用時，離線配菜結果頂端的提示
+    static let consentDeclinedNotice = "目前使用內建離線食譜。想要 AI 依你的食材配菜，可到 設定 > AI 資料使用 開啟。"
 
     // MARK: - Computed Properties
 
@@ -71,8 +77,9 @@ final class RecipeViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(aiService: AIService? = nil) {
+    init(aiService: AIService? = nil, offlineNotice: String? = nil) {
         self.aiService = aiService ?? AIServiceFactory.createService()
+        self.offlineNotice = offlineNotice
     }
 
     // MARK: - Methods
@@ -101,6 +108,7 @@ final class RecipeViewModel: ObservableObject {
 
         do {
             let response = try await aiService.generateRecipes(params: params)
+            fallbackNotice = offlineNotice
             loadingState = .success(response)
             logRecipesGenerated(response, source: aiService is LocalRecipeService ? .local : .ai)
         } catch {

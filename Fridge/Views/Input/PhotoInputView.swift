@@ -12,6 +12,8 @@ struct PhotoInputView: View {
     @State private var pendingCameraRecognition = false
     @FocusState private var isTextFieldFocused: Bool
 
+    private let isCameraAvailable = UIImagePickerController.isSourceTypeAvailable(.camera)
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -75,7 +77,7 @@ struct PhotoInputView: View {
                                 .font(.system(size: 48, weight: .light))
                                 .foregroundColor(.secondary)
 
-                            Text("選擇或拍攝食材照片")
+                            Text(isCameraAvailable ? "選擇或拍攝食材照片" : "選擇食材照片")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
 
@@ -93,19 +95,21 @@ struct PhotoInputView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
                                 }
 
-                                // 拍照按鈕
-                                Button {
-                                    showCamera = true
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "camera")
-                                        Text("拍照")
+                                // 拍照按鈕（沒有相機的裝置／模擬器不顯示，只提供相簿）
+                                if isCameraAvailable {
+                                    Button {
+                                        showCamera = true
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "camera")
+                                            Text("拍照")
+                                        }
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundColor(.white)
+                                        .frame(width: 120, height: 44)
+                                        .background(Color.black)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
                                     }
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundColor(.white)
-                                    .frame(width: 120, height: 44)
-                                    .background(Color.black)
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
                                 }
                             }
                         }

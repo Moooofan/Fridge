@@ -29,6 +29,10 @@ final class VisionIngredientService {
     /// 傳輸層與 `OpenAIService` 一致：Supabase 有設定時走 Edge Function
     /// （`EdgeAIClient`，金鑰留在伺服器端），否則才直接打 OpenAI API（需要本機 API Key）。
     func recognizeIngredients(image: UIImage) async throws -> [String] {
+        // 縱深防禦（App Store 5.1.2(i)）：未同意傳送資料給第三方 AI 時，絕不上傳照片
+        guard AIConsentStore.isGranted else {
+            throw AIServiceError.apiError("需要先在「設定 > AI 資料使用」同意，才能用照片辨識食材")
+        }
         let apiKey = SecretsManager.shared.openAIAPIKey
         guard apiKey != nil || EdgeAIClient.isConfigured else {
             throw AIServiceError.apiError("需要設定 OpenAI API Key 才能辨識照片")

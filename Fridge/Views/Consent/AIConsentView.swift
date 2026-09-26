@@ -27,7 +27,7 @@ struct AIConsentView: View {
                         bullet("paperplane",
                                "你輸入的食材、用餐條件，以及你選擇辨識的照片，會透過我們的伺服器傳送給 OpenAI，用來產生食譜與辨識食材。")
                         bullet("photo",
-                               "照片只用於這次辨識，辨識完成後不會保留。")
+                               "我們的伺服器不保存你的照片。OpenAI 依其 API 資料政策處理：預設不用於訓練模型，為防濫用最多保留 30 天。")
                         bullet("hand.raised",
                                "這些資料不會用來追蹤你，也不會用於廣告。")
                         bullet("arrow.uturn.backward",
