@@ -111,9 +111,9 @@ struct LoginView: View {
                 foreground: .black,
                 borderColor: Color(.systemGray4)
             ) {
-                Text("G")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.blue)
+                Image("GoogleLogo")
+                    .resizable()
+                    .scaledToFit()
             } action: {
                 Task { await viewModel.signIn(with: .google) }
             }
@@ -124,8 +124,9 @@ struct LoginView: View {
                 foreground: .white,
                 borderColor: .clear
             ) {
-                Image(systemName: "message.fill")
-                    .foregroundColor(.white)
+                Image("LineLogo")
+                    .resizable()
+                    .scaledToFit()
             } action: {
                 Task { await viewModel.signIn(with: .line) }
             }
@@ -158,7 +159,7 @@ private struct ProviderButton<Icon: View>: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 icon()
-                    .frame(width: 20, height: 20)
+                    .frame(width: 22, height: 22)
                 Text(title)
                     .font(.headline)
             }

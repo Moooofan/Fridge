@@ -100,6 +100,6 @@ xcrun simctl launch booted com.moooofan.fridge
 - AI 代理：系統提示由伺服器決定、參數鎖死、每人 20 次/10 分、60 次/日、全站 2000 次/日，DB 出錯即拒絕；`rate_limits` 兩天前的紀錄會被隨機清除。
 - `supabase db push` 會被 auto-mode 分類器擋下，要使用者自己在終端機跑（加 `--yes` 免互動）；`supabase functions deploy` 可由 Claude 執行。
 - 上架素材：`Distribution/AppStore/`（listing-zh-TW.md、listing-en.md、privacy-labels.md、screenshots/ 1320×2868 共 5 張，`render.py` 重繪）。
-- App Store Connect：App ID `6816392156`（名稱「Fridge 清冰箱」，SKU fridge-ios-001），免費、174 地區（排除中國大陸：生成式 AI 需當地許可），手動發佈。TestFlight 內部群組「內部測試」已啟用自動分發。
+- App Store Connect：App ID `6816392156`（名稱「Fridge 清冰箱料理」，2026-09-26 由「Fridge 清冰箱」改；主畫面顯示名 CFBundleDisplayName 同步，SKU fridge-ios-001），免費、174 地區（排除中國大陸：生成式 AI 需當地許可），手動發佈。TestFlight 內部群組「內部測試」已啟用自動分發。
 - Sign in with Apple 撤銷金鑰：Key ID `W79HAQ838Y`，私鑰在 `~/.config/fridge/AuthKey_W79HAQ838Y.p8`（600，不進 repo），已設為 Supabase secrets；2026-09-26 以假授權碼測試 Apple 回 invalid_grant（金鑰有效）。
 - 上傳新建置：先把 project.yml 的 `CURRENT_PROJECT_VERSION` +1，再跑 `Distribution/testflight.sh`。ASC 截圖欄位是 6.5 吋（1284×2778），用 `Distribution/AppStore/screenshots/upload65/`。

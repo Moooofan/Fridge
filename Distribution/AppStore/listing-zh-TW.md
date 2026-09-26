@@ -6,7 +6,7 @@ is believed to count characters the same way (UNVERIFIED — if the keyword fiel
 Generated 2026-09-26.
 
 ## App name (≤30)
-- **Primary**: `Fridge 清冰箱` — `10/30` OK (10 chars / 16 UTF-8 bytes)
+- **Primary**: `Fridge 清冰箱料理` — `12/30` OK (12 chars / 22 UTF-8 bytes; changed 2026-09-26, was `Fridge 清冰箱`)
 - Fallback 1: `Fridge 清冰箱食譜` — `12/30` OK (12 chars / 22 UTF-8 bytes)
 - Fallback 2: `清冰箱 Fridge－AI 家常菜` — `17/30` OK (17 chars / 31 UTF-8 bytes)
 

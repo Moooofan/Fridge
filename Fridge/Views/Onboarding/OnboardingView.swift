@@ -181,7 +181,7 @@ private struct OnboardingPageView: View {
 
                     Spacer(minLength: 24)
                 }
-                .frame(minHeight: geo.size.height)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height)
             }
         }
     }
