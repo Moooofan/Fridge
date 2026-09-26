@@ -22,6 +22,9 @@ final class RecipeViewModel: ObservableObject {
     /// AI 失敗改用內建食譜時顯示給使用者的說明；nil 表示沒有發生備援
     @Published var fallbackNotice: String?
 
+    /// 菜單完全沒用到某些使用者輸入的食材時顯示的提示；nil 表示都用到了
+    @Published var unusedIngredientsNotice: String?
+
     /// 步驟完成狀態（RecipeID -> [StepIndex: Bool]）
     @Published var stepProgress: [String: [Int: Bool]] = [:]
 
@@ -98,6 +101,7 @@ final class RecipeViewModel: ObservableObject {
 
         loadingState = .loading
         fallbackNotice = nil
+        unusedIngredientsNotice = nil
 
         let params = AIRequestParams(
             ingredients: ingredients,
@@ -109,6 +113,7 @@ final class RecipeViewModel: ObservableObject {
         do {
             let response = try await aiService.generateRecipes(params: params)
             fallbackNotice = offlineNotice
+            unusedIngredientsNotice = Self.buildUnusedIngredientsNotice(response: response, ingredients: ingredients, preferences: preferences)
             loadingState = .success(response)
             logRecipesGenerated(response, source: aiService is LocalRecipeService ? .local : .ai)
         } catch {
@@ -118,12 +123,22 @@ final class RecipeViewModel: ObservableObject {
                let fallback = try? await LocalRecipeService().generateRecipes(params: params),
                !fallback.recipes.isEmpty {
                 fallbackNotice = "AI 暫時無法使用（\(aiMessage)），改用內建的專業廚師食譜為你配菜。"
+                unusedIngredientsNotice = Self.buildUnusedIngredientsNotice(response: fallback, ingredients: ingredients, preferences: preferences)
                 loadingState = .success(fallback)
                 logRecipesGenerated(fallback, source: .localFallback)
                 return
             }
             loadingState = .error(aiMessage)
         }
+    }
+
+    /// 檢查是否有食材完全沒被用到（已排除過敏原/不喜歡的食材），組成給使用者看的提示文字；都用到了就回傳 nil
+    private static func buildUnusedIngredientsNotice(response: AIRecipeResponse, ingredients: [UserIngredient], preferences: UserPreferences) -> String? {
+        let names = ingredients.map { $0.name }
+        let excluded = preferences.allergies + preferences.dislikes
+        let unused = RecipeDatabase.unusedIngredients(in: response, userIngredients: names, excluding: excluded)
+        guard !unused.isEmpty else { return nil }
+        return "這次沒用到：\(unused.joined(separator: "、"))。可以重新產生一次，或手動調整食材清單。"
     }
 
     /// 記錄一次食譜生成完成（不含食譜文字／食材名稱，只有菜／湯數量與來源）。
@@ -153,6 +168,7 @@ final class RecipeViewModel: ObservableObject {
         loadingState = .idle
         selectedRecipe = nil
         fallbackNotice = nil
+        unusedIngredientsNotice = nil
         stepProgress.removeAll()
     }
 

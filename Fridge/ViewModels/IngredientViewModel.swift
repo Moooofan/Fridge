@@ -123,29 +123,39 @@ final class IngredientViewModel: ObservableObject {
         return Self.ingredientSynonyms[trimmed] ?? trimmed
     }
 
-    /// 解析食材字串（支援逗號、頓號、換行、空格分隔）
+    /// 純連接詞，不會是食材名稱本身：只在被當成獨立詞（前後有逗號/空格等分隔）時視為分隔符號，
+    /// 避免「高麗菜 和 豬絞肉」被空格切開後，「和」自己變成一個假食材
+    private static let conjunctionStopwords: Set<String> = ["和", "跟", "與", "及"]
+
+    /// 解析食材字串（支援逗號、頓號、換行、空格分隔，以及「和/跟/與/及」等連接詞）
     private func parseIngredientString(_ input: String) -> [String] {
-        // 先用逗號、頓號、換行分隔
+        // 先把「A和B」「A 跟 B」這類連接詞正規化成頓號，這樣不論連接詞前後有沒有空格，
+        // 都能正確拆成兩個食材，而不是被吃掉或被當成獨立的假食材。
+        // 「和」後面加負向前瞻排除「和牛」，避免把食材名稱「和牛」誤拆、吃掉「和」字。
+        let conjunctionPattern = #"\s*(和(?!牛)|跟|與|及)\s*"#
+        let normalized = input.replacingOccurrences(of: conjunctionPattern, with: "、", options: .regularExpression)
+
+        // 再用逗號、頓號、換行分隔
         let primarySeparators = CharacterSet(charactersIn: ",、，\n")
         var items: [String] = []
 
-        let primaryParts = input.components(separatedBy: primarySeparators)
+        let primaryParts = normalized.components(separatedBy: primarySeparators)
 
         for part in primaryParts {
             let trimmed = part.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty { continue }
 
             // 檢查是否需要用空格進一步分隔
-            // 如果包含多個空格分隔的詞，則分開
+            // 如果包含多個空格分隔的詞，則分開；同時濾掉單獨殘留的連接詞（保險，理論上已被上面的 regex 處理掉）
             let spaceParts = trimmed.components(separatedBy: .whitespaces)
-                .filter { !$0.isEmpty }
+                .filter { !$0.isEmpty && !Self.conjunctionStopwords.contains($0) }
 
             if spaceParts.count > 1 {
                 // 有多個空格分隔的詞，分別加入
                 items.append(contentsOf: spaceParts)
-            } else {
+            } else if let only = spaceParts.first {
                 // 單一項目
-                items.append(trimmed)
+                items.append(only)
             }
         }
 

@@ -67,7 +67,7 @@ xcrun simctl launch booted com.moooofan.fridge
 6. 歷史紀錄
 
 ## Recipe Grounding & Vision (added 2026-09-04)
-- `Fridge/Resources/CuratedRecipes.json` — 146 道專業廚師家常菜（阿基師／詹姆士／楊桃美食網／食譜自由配等），schema 見 `Fridge/Models/CuratedRecipe.swift`。新增食譜請沿用同一 schema，`mainIngredients.name` 必須用 `RecipeDatabase.synonymTable` 的標準名。
+- `Fridge/Resources/CuratedRecipes.json` — 262 道專業廚師家常菜（阿基師／詹姆士／楊桃美食網／食譜自由配等；2026-09-26 新增 116 道蔬菜小菜、湯品主食、日韓泰越西式），schema 見 `Fridge/Models/CuratedRecipe.swift`。新增食譜請沿用同一 schema，`mainIngredients.name` 必須用 `RecipeDatabase.synonymTable` 的標準名。
 - `Fridge/Services/RecipeDatabase.swift` — 載入 JSON、同義詞正規化、依冰箱食材評分比對（主食材 ×3、配料 ×1、調味 ×0.25），支援 `excluding:`（過敏原／不喜歡）與 `preferFast`。
 - `Fridge/Services/OpenAIService.swift` — 模型 `gpt-5.6-luna`（GPT-5 系列：用 `reasoning_effort` + `max_completion_tokens`，不可送 `temperature`/`max_tokens`）。Prompt 會附上最相關 10 道參考食譜，要求 AI 以其為基礎；解碼失敗自動重試一次；回傳後再過濾過敏原。
 - `Fridge/Services/LocalRecipeService.swift` — 沒有 API Key 時的離線配菜（份量會依人數等比例換算）。

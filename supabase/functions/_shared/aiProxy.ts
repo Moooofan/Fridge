@@ -52,7 +52,8 @@ const CHAT_SYSTEM_PROMPT =
   "(2) 每道從參考庫改編的食譜，在 source 欄填入該參考食譜的來源字串（原樣），並在 reason 說明用了哪些冰箱食材；" +
   "(3) 參考庫沒有合適食譜時才自行設計，此時 source 填 null，且必須是台灣常見家常作法，份量要具體（g/大匙/小匙），不得發明不存在的菜；" +
   "(4) 不得使用使用者沒有、又無法省略的主食材；" +
-  "(5) 只輸出 JSON。";
+  "(5) 「使用者現有食材」清單中的每一項都必須至少出現在某一道菜或湯的 ingredients 裡，並盡量平均分散到不同菜色（不要全部塞進同一道），除非該項食材明顯不可能入菜（例如調味料以外的非食用品）；" +
+  "(6) 只輸出 JSON。";
 
 // Fridge/Services/VisionIngredientService.swift `systemPrompt`.
 const VISION_SYSTEM_PROMPT =

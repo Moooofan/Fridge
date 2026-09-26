@@ -119,6 +119,19 @@ private struct SuccessView: View {
                     .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
                 }
 
+                // 有食材完全沒被用到時的提示
+                if let notice = recipeVM.unusedIngredientsNotice {
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle")
+                        Text(notice)
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+                }
+
                 // 菜單摘要
                 MenuSummaryCard(menu: response.menu)
 

@@ -18,7 +18,8 @@ final class OpenAIService: AIService {
     (2) 每道從參考庫改編的食譜，在 source 欄填入該參考食譜的來源字串（原樣），並在 reason 說明用了哪些冰箱食材；\
     (3) 參考庫沒有合適食譜時才自行設計，此時 source 填 null，且必須是台灣常見家常作法，份量要具體（g/大匙/小匙），不得發明不存在的菜；\
     (4) 不得使用使用者沒有、又無法省略的主食材；\
-    (5) 只輸出 JSON。
+    (5) 「使用者現有食材」清單中的每一項都必須至少出現在某一道菜或湯的 ingredients 裡，並盡量平均分散到不同菜色（不要全部塞進同一道），除非該項食材明顯不可能入菜（例如調味料以外的非食用品）；\
+    (6) 只輸出 JSON。
     """
 
     func generateRecipes(params: AIRequestParams) async throws -> AIRecipeResponse {
@@ -46,27 +47,68 @@ final class OpenAIService: AIService {
         let userIngredientNames = params.ingredients.map { $0.name }
         let condiments = params.condiments
         let excludedTerms = params.preferences.allergies + params.preferences.dislikes
+        // 用「盡量涵蓋每一項食材」而非單純總分排序來挑參考食譜，避免冷門食材整批被擠出參考庫
+        // （見 RecipeDatabase.matchCoveringAllIngredients 的說明）。
         let refs = await Task.detached(priority: .userInitiated) {
-            RecipeDatabase.shared.match(userIngredients: userIngredientNames, condiments: condiments, limit: 10, excluding: excludedTerms)
+            RecipeDatabase.shared.matchCoveringAllIngredients(userIngredients: userIngredientNames, condiments: condiments, limit: 10, excluding: excludedTerms)
         }.value
         groundedParams.referenceRecipes = refs.map { $0.recipe }
 
         Self.lastRequestDate = Date()
 
         let basePrompt = groundedParams.buildPrompt()
+        let excludedForCoverage = params.preferences.allergies + params.preferences.dislikes
 
         do {
             let recipeResponse = try await fetchAndDecode(apiKey: apiKey, userPrompt: basePrompt)
-            let withSource = markAIAdapted(applySourceFallback(recipeResponse, references: groundedParams.referenceRecipes))
-            return filterOutAllergens(withSource, allergies: params.preferences.allergies)
+            let filtered = finalize(recipeResponse, references: groundedParams.referenceRecipes, allergies: params.preferences.allergies)
+            return try await coverAllIngredientsIfNeeded(
+                filtered,
+                userIngredientNames: userIngredientNames,
+                excluding: excludedForCoverage,
+                apiKey: apiKey,
+                basePrompt: basePrompt,
+                references: groundedParams.referenceRecipes,
+                allergies: params.preferences.allergies
+            )
         } catch let error as AIServiceError {
             guard case .decodingError = error else { throw error }
-            // 解碼失敗只重試一次，附加提示要求模型重新輸出合法 JSON；重試不重新計入 3 秒節流
+            // 解碼失敗只重試一次，附加提示要求模型重新輸出合法 JSON；重試不重新計入 3 秒節流。
+            // 這個名額用在修 JSON 上，就不再為了涵蓋率多打一次（每次生成最多重試一次，避免浪費額度），
+            // 若這次結果仍缺食材，就照樣回傳，讓 UI 提示使用者哪些食材沒被用到。
             let retryPrompt = basePrompt + "\n\n上一次輸出不是合法 JSON，請重新輸出完整且合法的 JSON。"
             let recipeResponse = try await fetchAndDecode(apiKey: apiKey, userPrompt: retryPrompt)
-            let withSource = markAIAdapted(applySourceFallback(recipeResponse, references: groundedParams.referenceRecipes))
-            return filterOutAllergens(withSource, allergies: params.preferences.allergies)
+            return finalize(recipeResponse, references: groundedParams.referenceRecipes, allergies: params.preferences.allergies)
         }
+    }
+
+    /// 檢查這次的菜單是否完全沒用到使用者輸入的某些食材；若有，且還沒用過重試名額，
+    /// 就多打一次 API，明確點名缺漏的食材要求補上（每次生成最多這一次額外重試）。
+    private func coverAllIngredientsIfNeeded(
+        _ response: AIRecipeResponse,
+        userIngredientNames: [String],
+        excluding excluded: [String],
+        apiKey: String?,
+        basePrompt: String,
+        references: [CuratedRecipe],
+        allergies: [String]
+    ) async throws -> AIRecipeResponse {
+        let missing = RecipeDatabase.unusedIngredients(in: response, userIngredients: userIngredientNames, excluding: excluded)
+        guard !missing.isEmpty else { return response }
+
+        let coveragePrompt = basePrompt + "\n\n【修正】上一次的菜單完全沒用到這些食材：\(missing.joined(separator: "、"))。請重新設計菜單，確保每一種食材都至少出現在一道菜或湯裡（除非該項食材明顯不可能入菜）。"
+
+        guard let retryResponse = try? await fetchAndDecode(apiKey: apiKey, userPrompt: coveragePrompt) else {
+            // 重試失敗（網路、解碼都可能）：回傳原本的結果比整個失敗好，讓 UI 的「未使用食材」提示照舊顯示
+            return response
+        }
+        return finalize(retryResponse, references: references, allergies: allergies)
+    }
+
+    /// 補上 source 來源標示、標為 AI 改編、過濾過敏原——AI 回應的共用後處理
+    private func finalize(_ response: AIRecipeResponse, references: [CuratedRecipe], allergies: [String]) -> AIRecipeResponse {
+        let withSource = markAIAdapted(applySourceFallback(response, references: references))
+        return filterOutAllergens(withSource, allergies: allergies)
     }
 
     /// AI 產生的食譜一律標為「AI 改編」，畫面上以「靈感來源：…（AI 改編）」顯示來源
