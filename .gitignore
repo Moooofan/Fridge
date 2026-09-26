@@ -1,0 +1,59 @@
+# Xcode
+*.xcodeproj/
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+*.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.swp
+*~.nib
+
+# Build
+build/
+Build/
+
+# Secrets (IMPORTANT: Do not commit API keys!)
+Fridge/Resources/Secrets.plist
+
+# CocoaPods
+Pods/
+
+# SPM
+.build/
+Package.resolved
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# macOS
+.DS_Store
+*.swp
+*~
+._*
+
+# VSCode
+.vscode/
+
+# Misc
+*.log
+*.tmp
+
+# Local tooling / secrets
+supabase/.temp/
+supabase/.branches/
+Website/.vercel/
+.vercel/
+.claude/settings.local.json
+Fridge/Resources/GoogleService-Info.plist
+*.p8
