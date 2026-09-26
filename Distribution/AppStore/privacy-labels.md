@@ -8,6 +8,12 @@ ref `sqninmyidhgfjyvulayr`).
 
 Top-level question: **"Does this app collect data from this app?"** → Yes.
 
+These answers mirror `Fridge/PrivacyInfo.xcprivacy` (NSPrivacyCollectedDataTypes):
+Name, EmailAddress, UserID (linked, App Functionality); PhotosorVideos,
+OtherUserContent (not linked, App Functionality); ProductInteraction (linked,
+Analytics); CrashData, PerformanceData (linked, App Functionality).
+Tracking: none.
+
 ---
 
 ## 1. Contact Info — Name, Email Address
@@ -17,8 +23,9 @@ Top-level question: **"Does this app collect data from this app?"** → Yes.
   `SupabaseAuthService`). Stored in Supabase `auth.users`.
 - **Linked to the user's identity?** Yes.
 - **Used for tracking?** No.
-- **Purpose(s)**: App Functionality (account creation, sign-in, letting the
-  user's favorites/history follow them across devices).
+- **Purpose(s)**: App Functionality (account creation, sign-in, showing the
+  signed-in identity in Settings, account deletion). Favorites/history stay
+  on the device; there is no cross-device sync.
 - Justification: needed to create and restore the user's account; never sold
   or used for advertising.
 
@@ -26,8 +33,8 @@ Top-level question: **"Does this app collect data from this app?"** → Yes.
 
 - [ ] Collected: Yes
 - **Source**: Supabase `auth.users.id`, used as the foreign key on
-  `analytics_events.user_id` / `crash_reports.user_id` and (indirectly) on
-  favorites/history if those are ever synced server-side.
+  `analytics_events.user_id` / `crash_reports.user_id` and as the
+  `user:<id>` rate-limit key.
 - **Linked to the user's identity?** Yes.
 - **Used for tracking?** No.
 - **Purpose(s)**: App Functionality.
@@ -44,8 +51,8 @@ Top-level question: **"Does this app collect data from this app?"** → Yes.
   generate recipes or recognize ingredients. Not stored server-side beyond
   the request (no photo/ingredient-text table in `supabase/migrations/`).
 - **Linked to the user's identity?** No — the Edge Function does not persist
-  the content, and rate-limiting uses `user:<id>`/`ip:<ip>` only in the
-  ephemeral `rate_limits` ledger, not the content itself.
+  the content, and rate-limiting stores only `user:<id>`/`ip:<ip>` plus a
+  timestamp in the `rate_limits` ledger, never the content itself.
 - **Used for tracking?** No.
 - **Purpose(s)**: App Functionality (this is the app's core feature — turning
   ingredients into recipes).

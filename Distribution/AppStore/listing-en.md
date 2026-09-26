@@ -23,7 +23,7 @@ AI meals from your fridge
 What's for dinner? Type or snap what's in your fridge and get a full home-style menu built on 146 professional recipes, scaled to your table. Buy less, waste less.
 ```
 
-## Description (≤4000) — `1782/4000` OK (1782 chars / 1836 UTF-8 bytes)
+## Description (≤4000) — `1791/4000` OK (1791 chars / 1845 UTF-8 bytes)
 ```
 Turn what's in your fridge into tonight's dinner.
 
@@ -40,7 +40,7 @@ Fridge helps you cook with what you already have. Tell it your ingredients and h
 
 ■ Grounded in real recipes
 • 146 built-in home-cooking recipes from professional chefs and cooking publishers
-• AI builds your menu on top of these recipes, and each dish shows its reference source
+• AI builds your menu on top of these recipes; each dish shows its source, and AI-adapted dishes are labeled as such
 • Portions scale automatically to your number of servings
 
 ■ Check off as you cook
@@ -52,7 +52,7 @@ Fridge helps you cook with what you already have. Tell it your ingredients and h
 • If you're offline or the AI is busy, Fridge plans a menu from its built-in recipes and tells you so
 
 ■ Sign-in is optional
-• Sign in with Apple, Google or LINE to sync favorites across devices
+• Sign in with your Apple, Google or LINE account
 • Or tap "Browse first" to use the app without an account
 • Delete your account anytime in Settings
 
@@ -124,16 +124,17 @@ if you prefer to be conservative, "Infrequent/Mild" still yields 12+ — decide
 before submitting. (The exact questionnaire items change between App Store Connect
 versions — UNVERIFIED against the current form; answer any extra item "None/No".)
 
-## App Review notes — `1226/4000` OK (1226 chars / 1350 UTF-8 bytes)
+## App Review notes — `1935/4000` OK (1935 chars / 2131 UTF-8 bytes)
 ```
-1. Sign-in is optional. After launch: onboarding (tap 略過 "Skip") → login screen. Tap 「先逛逛，之後再登入」 ("Browse first, sign in later") to use all core features as a guest. Apple/Google/LINE sign-in only syncs favorites across devices.
-2. Text input: Home → 選擇輸入方式 (choose input) → text input, enter e.g. 雞蛋、番茄、高麗菜 → set servings/dishes → generate.
-3. Photo recognition: Home → 選擇輸入方式 → photo input → 相簿 (Photos) to pick a picture of food, or 拍照 (Camera) on a device. The app shows 「AI 辨識中…」 and lists detected ingredients; edit and tap 確認食材 (Confirm).
-4. AI requires consent: before the first AI use (recipe generation or photo recognition) the app explains that ingredient text/photos are sent to our server and forwarded to an AI service, and asks for consent. If declined, the app uses its built-in offline recipes.
-5. AI requests go through our own backend (Supabase Edge Functions); no third-party AI keys are embedded in the app.
-6. Account deletion: when signed in, go to 設定 > 刪除帳號 (Settings > Delete Account); this deletes the account and its cloud data.
-7. The 146 built-in recipes are compiled from publicly available home-cooking recipes by professional chefs and cooking publishers; each dish shows its reference source.
+1. Sign-in is optional. After launch: onboarding (tap 略過 "Skip") → login screen. Tap 「先逛逛，之後再登入」 ("Browse first, sign in later") to use all core features as a guest. Favorites and history are stored on the device only.
+2. Text input: Home → 選擇輸入方式 (choose input) → text input, enter e.g. 雞蛋、番茄、高麗菜 → set servings/dishes → 確認食材 (Confirm) → 生成推薦料理 (Generate).
+3. Photo recognition: Home → 選擇輸入方式 → photo input → 相簿 (Photos) to pick a picture of food, or 拍照 (Camera) on a device (devices without a camera show Photos only). The app shows 「AI 辨識中…」 and lists detected ingredients, which can be edited.
+4. AI data consent: before the first AI use (recipe generation or photo recognition) the app explains that ingredient text, meal settings and photos are sent through our server to OpenAI, and asks the user to agree or decline. If declined, recipe generation uses built-in offline recipes (a notice is shown at the top of the results) and photo recognition does not run. The choice can be changed anytime in 設定 > AI 資料使用 (Settings > AI data use).
+5. All AI requests go through our own backend (Supabase Edge Functions); no third-party AI keys are embedded in the app.
+6. Account deletion: after signing in with Apple, Google or LINE, go to 設定 > 刪除帳號 (Settings > Delete Account) and confirm with 刪除 (Delete). Sign in with Apple users are first asked by Apple to re-authenticate. The account and its server-side data are permanently removed, on-device favorites, history and settings are cleared, and the app returns to the login screen.
+7. The 146 built-in recipes are compiled from publicly available home-cooking recipes by professional chefs and cooking publishers. Built-in recipes show 「參考來源：…」 (reference source); AI-adapted dishes show 「靈感來源：…（AI 改編）」 (inspired by …, AI-adapted). The listed chefs and sites are not affiliated with or endorsing the app (also stated in Settings > About).
+8. The app is iPhone-only and portrait-only.
 ```
 Sign-in required for review: **No** (guest mode). No demo account needed.
-Before submitting, confirm items 4 and 6 match the shipped build (the AI
-consent screen and 設定 > 刪除帳號 were being built in parallel on 2026-09-26).
+Items 4, 6 and 7 were checked against the build on 2026-09-26 (consent screen,
+設定 > 刪除帳號, 參考來源／靈感來源 labels).

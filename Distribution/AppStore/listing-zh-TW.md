@@ -23,7 +23,7 @@ then the fallbacks in order.
 今晚煮什麼？輸入或拍下冰箱裡的食材，AI 以 146 道專業家常菜食譜為底，幫你配好幾菜幾湯，份量依人數換算。少買一點、少丟一點。
 ```
 
-## Description (≤4000) — `611/4000` OK (611 chars / 1639 UTF-8 bytes)
+## Description (≤4000) — `613/4000` OK (613 chars / 1639 UTF-8 bytes)
 ```
 把冰箱裡有的，變成今晚的菜。
 
@@ -40,7 +40,7 @@ Fridge 是清冰箱的好幫手：告訴它你手邊有什麼食材、幾個人�
 
 ■ 以專業食譜為底，不是憑空亂編
 ・內建 146 道由專業廚師與料理出版的家常菜食譜
-・AI 以這些食譜為基礎來配菜，每道菜都標明參考來源
+・AI 以這些食譜為基礎來配菜，每道菜都標明來源，AI 改編的會特別註明
 ・份量依人數自動換算
 
 ■ 邊煮邊勾
@@ -52,7 +52,7 @@ Fridge 是清冰箱的好幫手：告訴它你手邊有什麼食材、幾個人�
 ・網路不穩或 AI 忙線時，會改用內建食譜幫你配菜，並清楚提示
 
 ■ 登入是選擇，不是必須
-・可用 Apple、Google 或 LINE 登入，在多台裝置同步收藏
+・可用 Apple、Google 或 LINE 帳號登入
 ・也可以直接「先逛逛」，不登入就能使用
 ・可隨時在「設定」中刪除帳號
 
@@ -124,16 +124,17 @@ if you prefer to be conservative, "Infrequent/Mild" still yields 12+ — decide
 before submitting. (The exact questionnaire items change between App Store Connect
 versions — UNVERIFIED against the current form; answer any extra item "None/No".)
 
-## App Review notes — `546/4000` OK (546 chars / 1388 UTF-8 bytes)
+## App Review notes — `746/4000` OK (746 chars / 1900 UTF-8 bytes)
 ```
-1. 登入為選擇性：啟動後依序為新手導覽（可按「略過」）→ 登入畫面。請點選「先逛逛，之後再登入」即可以訪客身分使用全部核心功能，無需帳號。Apple／Google／LINE 登入僅用於跨裝置同步收藏。
-2. 文字輸入測試：首頁「選擇輸入方式」→ 文字輸入，輸入例如「雞蛋、番茄、高麗菜、豬肉」→ 設定人數與菜數 → 產生食譜。
-3. 拍照辨識測試：首頁「選擇輸入方式」→ 拍照輸入 → 「相簿」選一張含食材的照片（模擬器可用相簿內圖片），或以實機「拍照」。App 會顯示「AI 辨識中…」並列出辨識到的食材，可再手動補充後按「確認食材」。
-4. AI 功能需同意：第一次使用 AI（產生食譜或照片辨識）前，App 會顯示說明並請使用者同意將食材文字／照片傳送至我們的伺服器轉交 AI 服務處理。若不同意，App 會改用內建離線食譜配菜，仍可正常使用。
-5. AI 請求透過我們自己的後端（Supabase Edge Functions）轉發，App 內不含任何第三方 AI 金鑰。
-6. 帳號刪除：登入後前往「設定 > 刪除帳號」，確認後會刪除帳號與雲端資料。
-7. 內建 146 道食譜整理自專業廚師與料理出版的公開家常菜食譜，App 內每道菜標示參考來源；AI 以其為基礎重新組合配菜。
+1. 登入為選擇性：啟動後依序為新手導覽（可按「略過」）→ 登入畫面。點選「先逛逛，之後再登入」即可以訪客身分使用全部核心功能，無需帳號。收藏與歷史紀錄只存在裝置上。
+2. 文字輸入測試：首頁「選擇輸入方式」→ 文字輸入，輸入例如「雞蛋、番茄、高麗菜、豬肉」→ 設定人數與菜數 → 確認食材 → 生成推薦料理。
+3. 拍照辨識測試：首頁「選擇輸入方式」→ 拍照輸入 →「相簿」選一張含食材的照片，或在實機上「拍照」（沒有相機的裝置只顯示「相簿」）。App 會顯示「AI 辨識中…」並列出辨識到的食材，可手動增減。
+4. AI 資料使用同意：第一次使用 AI（生成食譜或照片辨識）前，App 會說明食材文字、用餐條件與照片會經由我們的伺服器傳送給 OpenAI，並請使用者選擇同意或不同意。不同意時，生成食譜改用內建離線食譜（結果頁頂端會顯示提示），照片辨識則不會執行。可隨時在「設定 > AI 資料使用」變更。
+5. AI 請求一律經由我們自己的後端（Supabase Edge Functions）轉發，App 內不含任何第三方 AI 金鑰。
+6. 刪除帳號：以 Apple／Google／LINE 登入後，前往「設定 > 刪除帳號」並按「刪除」確認。以 Apple 登入者會先由 Apple 再次驗證身分。刪除後，伺服器上的帳號與相關資料會永久移除，裝置上的收藏、歷史紀錄與設定也會清除，並回到登入畫面。
+7. 內建 146 道食譜整理自專業廚師與料理出版的公開家常菜食譜。內建食譜顯示「參考來源：…」；AI 依參考食譜改編的菜顯示「靈感來源：…（AI 改編）」。所列廚師與網站與本 App 無合作或背書關係（設定 > 關於亦有說明）。
+8. 本 App 僅支援 iPhone，直向使用。
 ```
 Sign-in required for review: **No** (guest mode). No demo account needed.
-Before submitting, confirm items 4 and 6 match the shipped build (the AI
-consent screen and 設定 > 刪除帳號 were being built in parallel on 2026-09-26).
+Items 4, 6 and 7 were checked against the build on 2026-09-26 (consent screen,
+設定 > 刪除帳號, 參考來源／靈感來源 labels).
