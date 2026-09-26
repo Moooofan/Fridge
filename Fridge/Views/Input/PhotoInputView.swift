@@ -7,6 +7,9 @@ struct PhotoInputView: View {
     @State private var showImagePicker = false
     @State private var showCamera = false
     @State private var selectedItem: PhotosPickerItem?
+    @State private var showAIConsent = false
+    /// 相機拍完照時相機 sheet 還在畫面上，等它收起後（onDismiss）再辨識／詢問同意。
+    @State private var pendingCameraRecognition = false
     @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
@@ -44,7 +47,7 @@ struct PhotoInputView: View {
                             }
                         } else {
                             Button {
-                                Task { await ingredientVM.recognizeFromPhoto() }
+                                recognizeWithConsent()
                             } label: {
                                 HStack {
                                     Image(systemName: "sparkles")
@@ -223,10 +226,24 @@ struct PhotoInputView: View {
         .navigationDestination(isPresented: $showReviewView) {
             IngredientReviewView(ingredientVM: ingredientVM)
         }
-        .sheet(isPresented: $showCamera) {
+        .sheet(isPresented: $showCamera, onDismiss: {
+            if pendingCameraRecognition {
+                pendingCameraRecognition = false
+                recognizeWithConsent()
+            }
+        }) {
             CameraView(image: $ingredientVM.selectedImage) {
                 ingredientVM.recognitionError = nil
-                Task { await ingredientVM.recognizeFromPhoto() }
+                pendingCameraRecognition = true
+            }
+        }
+        .sheet(isPresented: $showAIConsent) {
+            AIConsentView { granted in
+                if granted {
+                    Task { await ingredientVM.recognizeFromPhoto() }
+                } else {
+                    ingredientVM.recognitionError = IngredientViewModel.consentRequiredMessage
+                }
             }
         }
         .onChange(of: selectedItem) { _, newValue in
@@ -235,7 +252,7 @@ struct PhotoInputView: View {
                    let image = UIImage(data: data) {
                     ingredientVM.selectedImage = image
                     ingredientVM.recognitionError = nil
-                    await ingredientVM.recognizeFromPhoto()
+                    recognizeWithConsent()
                 }
             }
         }
@@ -246,6 +263,15 @@ struct PhotoInputView: View {
 
     private var canProceed: Bool {
         !ingredientVM.ingredients.isEmpty || !ingredientVM.photoNote.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    /// App Store 5.1.2(i)：照片送去 AI 辨識前必須已同意；未同意就先顯示同意畫面。
+    private func recognizeWithConsent() {
+        if AIConsentStore.isGranted {
+            Task { await ingredientVM.recognizeFromPhoto() }
+        } else {
+            showAIConsent = true
+        }
     }
 
     private func proceedToReview() {

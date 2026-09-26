@@ -1,3 +1,4 @@
+import AuthenticationServices
 import CryptoKit
 import Foundation
 import UIKit
@@ -30,5 +31,59 @@ enum AppleSignInCoordinator {
             .compactMap { $0 as? UIWindowScene }
             .flatMap { $0.windows }
             .first { $0.isKeyWindow }
+    }
+}
+
+/// 刪除帳號前重新跑一次 Sign in with Apple，只為了拿一個新的 `authorizationCode`
+/// 交給 `delete-account` Edge Function 撤銷 Apple 授權（Apple 要求撤銷 token，
+/// 而 code 是一次性、5 分鐘內有效，所以必須在刪除當下重新取得）。
+@MainActor
+final class AppleReauthorizer: NSObject, ASAuthorizationControllerDelegate,
+    ASAuthorizationControllerPresentationContextProviding {
+    private var continuation: CheckedContinuation<String, Error>?
+    /// 流程進行中保留自己，避免 delegate 在回呼前被釋放。
+    private static var inFlight: AppleReauthorizer?
+
+    static func requestAuthorizationCode() async throws -> String {
+        let reauthorizer = AppleReauthorizer()
+        inFlight = reauthorizer
+        defer { inFlight = nil }
+        return try await withCheckedThrowingContinuation { continuation in
+            reauthorizer.continuation = continuation
+            let request = ASAuthorizationAppleIDProvider().createRequest()
+            request.requestedScopes = []
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = reauthorizer
+            controller.presentationContextProvider = reauthorizer
+            controller.performRequests()
+        }
+    }
+
+    func authorizationController(controller: ASAuthorizationController,
+                                 didCompleteWithAuthorization authorization: ASAuthorization) {
+        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let codeData = credential.authorizationCode,
+              let code = String(data: codeData, encoding: .utf8) else {
+            finish(.failure(AuthError.missingIdentityToken))
+            return
+        }
+        finish(.success(code))
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+            finish(.failure(AuthError.cancelled))
+        } else {
+            finish(.failure(AuthError.unknown(error)))
+        }
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        AppleSignInCoordinator.keyWindow() ?? ASPresentationAnchor()
+    }
+
+    private func finish(_ result: Result<String, Error>) {
+        continuation?.resume(with: result)
+        continuation = nil
     }
 }

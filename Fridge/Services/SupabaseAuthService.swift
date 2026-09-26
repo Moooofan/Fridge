@@ -359,6 +359,72 @@ final class SupabaseAuthService: NSObject, AuthService {
         sessionStore.clear()
     }
 
+    // MARK: - Delete account
+
+    /// 呼叫 Edge Function `delete-account`（`supabase/functions/delete-account/`）
+    /// 刪除雲端帳號。Apple 使用者先重新跑一次 Sign in with Apple 取得新的
+    /// `authorizationCode`（一次性、5 分鐘有效），交給伺服器換 refresh token 後撤銷。
+    /// 成功後登出並清除本機資料。絕不印出 token／code。
+    @MainActor
+    func deleteAccount() async throws {
+        guard let supabaseURL = SecretsManager.shared.supabaseURL,
+              let anonKey = SecretsManager.shared.supabaseAnonKey else {
+            throw AuthError.notConfigured("尚未設定雲端帳號服務")
+        }
+
+        let session: Supabase.Session
+        do {
+            session = try await client.auth.session
+        } catch {
+            throw AuthError.deletionFailed("登入狀態已失效，請重新登入後再試")
+        }
+
+        var body: [String: String] = [:]
+        let provider = sessionStore.currentUser?.provider
+            ?? AuthProvider(rawValue: session.user.appMetadata["provider"]?.stringValue ?? "")
+        if provider == .apple {
+            // 使用者取消重新授權 → 丟 .cancelled，整個刪除流程中止（什麼都不刪）。
+            body["apple_authorization_code"] = try await AppleReauthorizer.requestAuthorizationCode()
+        }
+
+        var request = URLRequest(url: supabaseURL.appendingPathComponent("functions/v1/delete-account"))
+        request.httpMethod = "POST"
+        request.timeoutInterval = 30
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            throw AuthError.deletionFailed(error.localizedDescription)
+        }
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            struct ErrorBody: Decodable {
+                struct Inner: Decodable { let message: String? }
+                let error: Inner?
+                let message: String?
+            }
+            let decoded = try? JSONDecoder().decode(ErrorBody.self, from: data)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw AuthError.deletionFailed(decoded?.error?.message ?? decoded?.message ?? "HTTP \(status)")
+        }
+
+        #if DEBUG
+        struct DeleteResult: Decodable { let deleted: Bool; let appleRevoked: Bool?; let reason: String? }
+        if let result = try? JSONDecoder().decode(DeleteResult.self, from: data) {
+            print("🗑️ delete-account: deleted=\(result.deleted) appleRevoked=\(result.appleRevoked ?? false) reason=\(result.reason ?? "-")")
+        }
+        #endif
+
+        // 使用者已經在伺服器端刪除，signOut 的 API 呼叫可能失敗 —— signOut() 內部用 try?，
+        // 仍會清掉本機 Keychain session 與 Google／LINE SDK 狀態。
+        await signOut()
+        LocalUserData.clearAll()
+    }
+
     // MARK: - Helpers
 
     private static func profile(from user: Supabase.User, providerOverride: AuthProvider? = nil) -> UserProfile {

@@ -3,6 +3,11 @@ import SwiftUI
 struct IngredientReviewView: View {
     @ObservedObject var ingredientVM: IngredientViewModel
     @StateObject private var recipeVM = RecipeViewModel()
+    /// 使用者不同意 AI 資料使用時改用的離線配菜（LocalRecipeService，不會傳送任何資料）。
+    @StateObject private var offlineRecipeVM = RecipeViewModel(aiService: LocalRecipeService())
+    /// 這次產生結果用的是哪一個 ViewModel（結果頁要顯示同一個）。
+    @State private var usedOfflineRecipes = false
+    @State private var showAIConsent = false
     @StateObject private var settingsVM = SettingsViewModel()
     @EnvironmentObject var historyVM: HistoryViewModel
     @EnvironmentObject var condimentVM: CondimentViewModel
@@ -88,7 +93,7 @@ struct IngredientReviewView: View {
                 generateRecipes()
             } label: {
                 HStack {
-                    if recipeVM.isLoading {
+                    if activeRecipeVM.isLoading {
                         ProgressView()
                             .tint(.white)
                     } else {
@@ -103,14 +108,19 @@ struct IngredientReviewView: View {
                 .background(canGenerate ? Color.black : Color(.systemGray4))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             }
-            .disabled(!canGenerate || recipeVM.isLoading)
+            .disabled(!canGenerate || activeRecipeVM.isLoading)
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
         }
         .background(Color(.systemBackground))
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $showRecipeList) {
-            RecipeListView(recipeVM: recipeVM, ingredientVM: ingredientVM)
+            RecipeListView(recipeVM: activeRecipeVM, ingredientVM: ingredientVM)
+        }
+        .sheet(isPresented: $showAIConsent) {
+            AIConsentView { granted in
+                runGeneration(useAI: granted)
+            }
         }
         .sheet(item: $editingIngredient) { ingredient in
             EditIngredientSheet(
@@ -134,9 +144,27 @@ struct IngredientReviewView: View {
         newIngredient = ""
     }
 
+    private var activeRecipeVM: RecipeViewModel {
+        usedOfflineRecipes ? offlineRecipeVM : recipeVM
+    }
+
+    /// App Store 5.1.2(i)：第一次產生食譜前先取得使用者對「傳送資料給 OpenAI」的同意。
+    /// 已同意 → 走 AI；曾經明確不同意 → 直接離線配菜（可在設定改回）；還沒回答 → 顯示同意畫面。
     private func generateRecipes() {
+        if AIConsentStore.isGranted {
+            runGeneration(useAI: true)
+        } else if AIConsentStore.hasAnswered {
+            runGeneration(useAI: false)
+        } else {
+            showAIConsent = true
+        }
+    }
+
+    private func runGeneration(useAI: Bool) {
+        usedOfflineRecipes = !useAI
+        let vm = activeRecipeVM
         Task {
-            await recipeVM.generateRecipes(
+            await vm.generateRecipes(
                 ingredients: ingredientVM.ingredients,
                 constraints: ingredientVM.constraints,
                 preferences: settingsVM.preferences,
@@ -144,7 +172,7 @@ struct IngredientReviewView: View {
             )
 
             // 成功時儲存歷史紀錄
-            if case .success(let response) = recipeVM.loadingState {
+            if case .success(let response) = vm.loadingState {
                 historyVM.addHistory(
                     constraints: ingredientVM.constraints,
                     ingredients: ingredientVM.ingredients,

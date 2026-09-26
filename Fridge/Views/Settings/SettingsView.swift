@@ -2,12 +2,21 @@ import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
+    #if DEBUG
+    @StateObject private var authViewModel = DemoLaunch.makeAuthViewModel()
+    #else
     @StateObject private var authViewModel = AuthViewModel()
+    #endif
     @EnvironmentObject var condimentVM: CondimentViewModel
+    @EnvironmentObject var favoritesVM: FavoritesViewModel
+    @EnvironmentObject var historyVM: HistoryViewModel
     @EnvironmentObject var appFlow: AppFlowState
     @FocusState private var isAllergyFieldFocused: Bool
     @FocusState private var isDislikeFieldFocused: Bool
     @State private var showingLoginSheet = false
+    @State private var showingDeleteConfirm = false
+    @State private var showingAIConsentSheet = false
+    @State private var aiConsentGranted = AIConsentStore.isGranted
 
     var body: some View {
         NavigationStack {
@@ -17,6 +26,20 @@ struct SettingsView: View {
                     accountRow
                 } header: {
                     Text("帳號")
+                } footer: {
+                    if let message = authViewModel.errorMessage {
+                        Text(message)
+                            .foregroundColor(.red)
+                    }
+                }
+
+                // AI 資料使用（App Store 5.1.2(i)）
+                Section {
+                    aiConsentRow
+                } header: {
+                    Text("隱私")
+                } footer: {
+                    Text("同意後，食材、用餐條件與你選擇辨識的照片會透過我們的伺服器傳送給 OpenAI。不同意時改用內建食譜離線配菜。")
                 }
 
                 // 調味料設定
@@ -189,6 +212,21 @@ struct SettingsView: View {
         .sheet(isPresented: $showingLoginSheet) {
             LoginView(viewModel: authViewModel)
         }
+        .sheet(isPresented: $showingAIConsentSheet, onDismiss: {
+            aiConsentGranted = AIConsentStore.isGranted
+        }) {
+            AIConsentView { granted in
+                aiConsentGranted = granted
+            }
+        }
+        .alert("刪除帳號", isPresented: $showingDeleteConfirm) {
+            Button("刪除", role: .destructive) {
+                Task { await deleteAccount() }
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("刪除後，你的帳號與雲端資料將永久移除，無法復原。")
+        }
         .onChange(of: authViewModel.user) { _, newValue in
             // 登入（或訪客）流程完成後自動收起 sheet。
             if newValue != nil {
@@ -219,6 +257,20 @@ struct SettingsView: View {
             } label: {
                 Text("登出")
             }
+            .disabled(authViewModel.isBusy)
+
+            Button(role: .destructive) {
+                showingDeleteConfirm = true
+            } label: {
+                HStack {
+                    Text("刪除帳號")
+                    Spacer()
+                    if authViewModel.isBusy {
+                        ProgressView()
+                    }
+                }
+            }
+            .disabled(authViewModel.isBusy)
         } else {
             Button {
                 showingLoginSheet = true
@@ -232,6 +284,50 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    // MARK: - AI Consent Row
+
+    private var aiConsentRow: some View {
+        Button {
+            if aiConsentGranted {
+                AIConsentStore.decline()
+                aiConsentGranted = false
+            } else {
+                showingAIConsentSheet = true
+            }
+        } label: {
+            HStack {
+                Image(systemName: "sparkles")
+                    .foregroundColor(.black)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("AI 資料使用")
+                        .foregroundColor(.primary)
+                    Text(aiConsentGranted ? "點一下即可撤回同意" : "點一下查看說明並同意")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                Text(aiConsentGranted ? "已同意" : "未同意")
+                    .foregroundColor(aiConsentGranted ? .green : .secondary)
+            }
+        }
+    }
+
+    // MARK: - Delete Account
+
+    /// 刪除成功後：重新載入（已清空的）本機資料，並回到登入畫面。
+    /// 登出列本身不切換 stage；這裡直接設 `appFlow.stage = .login`
+    /// （`AppFlowState.stage` 是公開可寫的 @Published 屬性）。
+    private func deleteAccount() async {
+        guard await authViewModel.deleteAccount() else { return }
+        favoritesVM.loadFavorites()
+        historyVM.loadHistory()
+        condimentVM.loadData()
+        viewModel.preferences = UserPreferences.load()
+        aiConsentGranted = AIConsentStore.isGranted
+        appFlow.stage = .login
     }
 
     private func accountSubtitle(for user: UserProfile) -> String {
@@ -306,5 +402,7 @@ private struct StyleRow: View {
 #Preview {
     SettingsView()
         .environmentObject(CondimentViewModel())
+        .environmentObject(FavoritesViewModel())
+        .environmentObject(HistoryViewModel())
         .environmentObject(AppFlowState())
 }

@@ -27,6 +27,9 @@ struct RootView: View {
 
 struct ContentView: View {
     @State private var selectedTab = 0
+    #if DEBUG
+    @State private var showDemoConsent = false
+    #endif
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -59,6 +62,15 @@ struct ContentView: View {
                 .tag(3)
         }
         .tint(.black)
+        #if DEBUG
+        .onAppear {
+            if DemoLaunch.scenario == "settings" { selectedTab = 3 }
+            if DemoLaunch.scenario == "consent" { showDemoConsent = true }
+        }
+        .sheet(isPresented: $showDemoConsent) {
+            AIConsentView { _ in }
+        }
+        #endif
     }
 }
 

@@ -149,6 +149,15 @@ final class LocalAuthService: AuthService {
         sessionStore.clear()
     }
 
+    // MARK: - Delete account
+
+    /// 本機模式沒有雲端帳號：登出並清除所有本機使用者資料即可。
+    /// （Apple 本機登入從未把授權碼交給伺服器，所以沒有可撤銷的 Apple token。）
+    func deleteAccount() async throws {
+        await signOut()
+        LocalUserData.clearAll()
+    }
+
     private static func formattedName(_ components: PersonNameComponents?) -> String? {
         guard let components else { return nil }
         let formatter = PersonNameComponentsFormatter()

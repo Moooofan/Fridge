@@ -67,7 +67,7 @@ struct HomeView: View {
     /// Kicks off the seeded demo scenario (if any) and navigates straight to
     /// RecipeListView once recipes are loaded. No-op for normal startup.
     private func runDemoLaunchIfNeeded() async {
-        guard DemoLaunch.scenario != nil else { return }
+        guard DemoLaunch.runsRecipeDemo else { return }
 
         await demoRecipeVM.generateRecipes(
             ingredients: demoIngredientVM.ingredients,

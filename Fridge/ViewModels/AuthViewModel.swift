@@ -96,6 +96,27 @@ final class AuthViewModel: ObservableObject {
         user = nil
     }
 
+    /// 永久刪除帳號。成功回傳 true（呼叫端負責把 App 導回登入畫面）；
+    /// 使用者取消 Apple 重新授權時回傳 false 且不顯示錯誤。
+    @discardableResult
+    func deleteAccount() async -> Bool {
+        errorMessage = nil
+        isBusy = true
+        defer { isBusy = false }
+        do {
+            try await authService.deleteAccount()
+            user = nil
+            return true
+        } catch let error as AuthError {
+            if case .cancelled = error { return false }
+            errorMessage = error.errorDescription
+            return false
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     private static func topViewController() -> UIViewController? {
         guard var top = AppleSignInCoordinator.keyWindow()?.rootViewController else { return nil }
         while let presented = top.presentedViewController {

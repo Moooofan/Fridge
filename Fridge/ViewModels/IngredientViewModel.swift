@@ -33,6 +33,9 @@ final class IngredientViewModel: ObservableObject {
     /// 照片辨識錯誤訊息
     @Published var recognitionError: String?
 
+    /// 未同意 AI 資料使用時的照片辨識提示。
+    static let consentRequiredMessage = "需要同意使用 AI 才能辨識照片，你也可以改用文字輸入"
+
     // MARK: - Services
 
     private let visionService = VisionIngredientService()
@@ -85,6 +88,11 @@ final class IngredientViewModel: ObservableObject {
     /// 從已選照片呼叫 AI 辨識食材，並合併進現有食材清單（沿用 addIngredient 的去重邏輯）
     func recognizeFromPhoto() async {
         guard let image = selectedImage else { return }
+        // 防呆：沒有取得 AI 資料使用同意時絕不送出照片（UI 端應先顯示 AIConsentView）。
+        guard AIConsentStore.isGranted else {
+            recognitionError = Self.consentRequiredMessage
+            return
+        }
 
         isRecognizing = true
         recognitionError = nil
