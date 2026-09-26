@@ -16,7 +16,7 @@
 //
 // Event names and per-event prop keys are validated against an allowlist
 // that mirrors Fridge/Services/Analytics.swift's `AnalyticsEvent` enum —
-// unknown events are rejected, unknown prop keys are silently stripped, so
+// unknown events are skipped, unknown prop keys are silently stripped, so
 // a client bug can never widen what gets stored server-side.
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
@@ -172,11 +172,15 @@ async function handleTrackRequest(req: Request, ctx: SupabaseContext): Promise<R
     return jsonError(`Too many events in one batch (max ${MAX_EVENTS_PER_BATCH})`, 400);
   }
 
+  // Unknown events are skipped (not the whole batch), so one stale event name
+  // from an old app build can't make the client retry the batch forever.
   const rows: Record<string, unknown>[] = [];
+  let skipped = 0;
   for (const item of body.events) {
     const eventName = item?.event;
     if (typeof eventName !== "string" || !(eventName in EVENT_PROP_ALLOWLIST)) {
-      return jsonError(`Unknown event: ${String(eventName)}`, 400);
+      skipped++;
+      continue;
     }
     rows.push({
       install_id: body.install_id,
@@ -189,13 +193,17 @@ async function handleTrackRequest(req: Request, ctx: SupabaseContext): Promise<R
     });
   }
 
+  if (rows.length === 0) {
+    return Response.json({ ok: true, inserted: 0, skipped }, { status: 200 });
+  }
+
   const { error } = await ctx.supabaseAdmin.from("analytics_events").insert(rows);
   if (error) {
     console.error("analytics_events insert failed", error);
     return jsonError("Failed to store events", 500);
   }
 
-  return Response.json({ ok: true, inserted: rows.length }, { status: 200 });
+  return Response.json({ ok: true, inserted: rows.length, skipped }, { status: 200 });
 }
 
 export default {
